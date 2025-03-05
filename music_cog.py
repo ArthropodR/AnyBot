@@ -59,7 +59,7 @@ class Music(commands.Cog):
         self.volume = 1.0
         
         try:
-            self.genius = lyricsgenius.Genius("OmbTo3MtV7k-3fPuKw4rdzscrgfLF4RNIdncXus04jviC0rXm1pCE6bD8ZgelqF3MDaAVXD-wEd-TsQZRniTjg")
+            self.genius = lyricsgenius.Genius("")
             self.genius.verbose = False
             self.genius.remove_section_headers = True
         except:
