@@ -6,7 +6,7 @@ from discord.ext import commands
 from moderation import ModCog
 from music_cog import Music
 
-class OnePixelSMP(commands.Bot):
+class AnyBot(commands.Bot):
     async def setup_hook(self):
         await self.load_cogs()
         await self.tree.sync()
@@ -16,7 +16,7 @@ class OnePixelSMP(commands.Bot):
         await self.add_cog(Music(self))
 
 intents = discord.Intents.all()
-client = OnePixelSMP(command_prefix="!", intents=intents)
+client = AnyBot(command_prefix="!", intents=intents)
 client.remove_command("help")
 
 @client.event

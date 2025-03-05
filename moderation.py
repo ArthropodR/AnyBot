@@ -113,7 +113,7 @@ class ModCog(commands.Cog):
 
     @commands.hybrid_command(description="Clears a specified number of messages.")
     @has_permissions(administrator=True)
-    async def clear(self, ctx: commands.Context, amount: int = 1):
+    async def purge(self, ctx: commands.Context, amount: int = 1):
         try:
             await ctx.channel.purge(limit=amount)
             await ctx.send(f"Cleared {amount} messages.", delete_after=5)
