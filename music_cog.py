@@ -66,22 +66,22 @@ class Music(commands.Cog):
             self.genius = None
 
         self.YDL_OPTIONS = {
-        'format': 'bestaudio/best',
-        'noplaylist': True,
-        'default_search': 'ytsearch',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-        'quiet': True,  
-        'no_warnings': True,
-    }
+            'format': 'bestaudio/best',
+            'noplaylist': True,
+            'default_search': 'ytsearch',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+            'quiet': True,  
+            'no_warnings': True,
+        }
 
         self.FFMPEG_OPTIONS = {
-            'before_options': '-re -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-            'options': '-vn -b:a 192k -af "volume=1.0"'
+            'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+            'options': '-vn'
         }
 
     @staticmethod
@@ -149,13 +149,14 @@ class Music(commands.Cog):
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
 
-            self.FFMPEG_OPTIONS['options'] = f'-vn -filter:a "volume={self.volume}"'
-    
             try:
                 source = discord.FFmpegPCMAudio(
                     track.stream_url, 
                     **self.FFMPEG_OPTIONS
                 )
+                
+                volume_controlled = discord.PCMVolumeTransformer(source, volume=self.volume)
+                
             except Exception as ffmpeg_error:
                 print(f"FFmpeg Error: {ffmpeg_error}")
                 await ctx.send(embed=discord.Embed(
@@ -167,11 +168,11 @@ class Music(commands.Cog):
 
             try:
                 ctx.voice_client.play(
-                    source, 
+                    volume_controlled, 
                     after=lambda e: asyncio.run_coroutine_threadsafe(
                         self._track_finished(ctx), 
                         self.client.loop
-                    ) if e else None
+                    ) if e is None else print(f"Player error: {e}" if e else "Unknown player error")
                 )
             except Exception as play_error:
                 print(f"Playback Error: {play_error}")
@@ -436,7 +437,7 @@ class Music(commands.Cog):
         
         await ctx.send(embed=discord.Embed(
             title="Loop Status", 
-            description=f"Looping is now {'enabled' : 'disabled'}.", 
+            description=f"Looping is now {'enabled' if self.is_loop else 'disabled'}.", 
             color=0x2ecc71
         ))
     
@@ -476,14 +477,21 @@ class Music(commands.Cog):
     async def set_volume(self, ctx: commands.Context, volume: int):
         if 0 <= volume <= 200:
             self.volume = volume / 100
-            if ctx.voice_client and ctx.voice_client.source:
-                ctx.voice_client.source.volume = self.volume
             
-            await ctx.send(embed=discord.Embed(
-                title="Volume Changed",
-                description=f"Volume set to {volume}%",
-                color=0x3498db
-            ))
+            if ctx.voice_client and ctx.voice_client.source and isinstance(ctx.voice_client.source, discord.PCMVolumeTransformer):
+                ctx.voice_client.source.volume = self.volume
+                
+                await ctx.send(embed=discord.Embed(
+                    title="Volume Changed",
+                    description=f"Volume set to {volume}%",
+                    color=0x3498db
+                ))
+            else:
+                await ctx.send(embed=discord.Embed(
+                    title="Volume Changed",
+                    description=f"Volume set to {volume}% (will apply to next track)",
+                    color=0x3498db
+                ))
         else:
             await ctx.send(embed=discord.Embed(
                 title="Invalid Volume",

@@ -1,10 +1,14 @@
+import os
 import asyncio
 
 import discord
 from discord.ext import commands
+from dotenv import load_dotenv
 
 from moderation import ModCog
 from music_cog import Music
+
+load_dotenv()
 
 class AnyBot(commands.Bot):
     async def setup_hook(self):
@@ -43,7 +47,10 @@ async def test(ctx):
 
 async def main():
     async with client:
-        await client.start('MTM0NjE1ODg1NzY1MDcwNDQzNA.GUwt6c.Qmt024wNEslfcr3GSAsxo7zDo7oOnsunHtEp3E')
+        token = os.getenv("DISCORD_BOT_TOKEN")  
+        if not token:
+            raise ValueError("No DISCORD_BOT_TOKEN found in .env file!")
+        await client.start(token)
 
 if __name__ == "__main__":
     asyncio.run(main())
